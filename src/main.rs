@@ -3,6 +3,15 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
 
+fn open_post(file: File) {
+  let mut buf_reader = BufReader::new(file);
+  let mut contents = String::new();
+  match buf_reader.read_to_string(&mut contents) {
+    Err(e) => println!("Error: {:?}", e),
+    _ => println!("{:?}", contents)
+  }
+}
+
 fn traverse_posts_directory() -> Result<(), ()> {
   for entry in WalkDir::new("./posts")
     .follow_links(true)
@@ -14,17 +23,8 @@ fn traverse_posts_directory() -> Result<(), ()> {
     let file = File::open(file_path);
     if file_name.ends_with(".md") {
       match file {
-        Ok(file) => {
-          let mut buf_reader = BufReader::new(file);
-          let mut contents = String::new();
-          match buf_reader.read_to_string(&mut contents) {
-            Err(e) => println!("Error: {:?}", e),
-            _ => println!("{:?}", contents)
-          }
-        }
-        Err(error) => {
-          println!("Error: {:?}", error);
-        }
+        Ok(file) => open_post(file),
+        Err(error) => println!("Error: {:?}", error)
       }
     }
   }
