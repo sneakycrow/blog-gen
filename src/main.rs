@@ -1,4 +1,7 @@
 use walkdir::WalkDir;
+use std::fs::File;
+use std::io::BufReader;
+use std::io::prelude::*;
 
 fn traverse_posts_directory() -> Result<(), ()> {
   for entry in WalkDir::new("./posts")
@@ -6,9 +9,23 @@ fn traverse_posts_directory() -> Result<(), ()> {
     .into_iter()
     .filter_map(|e| e.ok())
   {
+    let file_path = entry.path();
     let file_name = entry.file_name().to_string_lossy();
+    let file = File::open(file_path);
     if file_name.ends_with(".md") {
-      println!("{}", file_name);
+      match file {
+        Ok(file) => {
+          let mut buf_reader = BufReader::new(file);
+          let mut contents = String::new();
+          match buf_reader.read_to_string(&mut contents) {
+            Err(e) => println!("Error: {:?}", e),
+            _ => println!("{:?}", contents)
+          }
+        }
+        Err(error) => {
+          println!("Error: {:?}", error);
+        }
+      }
     }
   }
   Ok(())
