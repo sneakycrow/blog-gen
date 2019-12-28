@@ -1,29 +1,48 @@
-use walkdir::WalkDir;
-use std::fs::File;
-use std::io::BufReader;
-use std::io::prelude::*;
+use comrak::ComrakOptions;
+use serde_derive::Deserialize;
 use std::error::Error;
-use serde_derive::{Deserialize};
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::BufReader;
+use walkdir::WalkDir;
 
 #[derive(Debug, PartialEq, Deserialize)]
 struct YamlHeader {
-    title: String,
-    author: String,
-    #[serde(default)]
-    published: bool
+  title: String,
+  author: String,
+  #[serde(default)]
+  published: bool,
 }
 
-
-fn get_yaml(contents: String) -> Result<(), Box<dyn Error>> {
+fn get_yaml(contents: &String) -> Result<(), Box<dyn Error>> {
   let end_of_yaml = contents[4..].find("---").unwrap() + 4;
   let yaml = &contents[..end_of_yaml];
   let YamlHeader {
     author,
     title,
-    published
+    published,
   } = serde_yaml::from_str(yaml)?;
-  println!("{:?}", YamlHeader { author, published, title });
+  println!(
+    "YAML: {:?}",
+    YamlHeader {
+      author,
+      published,
+      title
+    }
+  );
   Ok(())
+}
+
+fn get_post_html(contents: &String) {
+  let end_of_yaml = contents[4..].find("---").unwrap() + 4;
+  let options = ComrakOptions {
+    ext_header_ids: Some(String::new()),
+    unsafe_: true, // Allow rendering of raw HTML
+    ..ComrakOptions::default()
+  };
+
+  let contents = comrak::markdown_to_html(&contents[end_of_yaml + 5..], &options);
+  println!("Contents: {:?}", contents);
 }
 
 fn open_post(file: File) -> Result<(), Box<dyn Error>> {
@@ -32,7 +51,8 @@ fn open_post(file: File) -> Result<(), Box<dyn Error>> {
   match buf_reader.read_to_string(&mut contents) {
     Err(e) => println!("Error: {:?}", e),
     _ => {
-      get_yaml(contents).unwrap();
+      get_yaml(&contents).unwrap();
+      get_post_html(&contents);
     }
   }
   Ok(())
