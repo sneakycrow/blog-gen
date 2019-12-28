@@ -5,6 +5,15 @@ use std::io::prelude::*;
 use std::error::Error;
 use serde_derive::{Deserialize};
 
+#[derive(Debug, PartialEq, Deserialize)]
+struct YamlHeader {
+    title: String,
+    author: String,
+    #[serde(default)]
+    published: bool
+}
+
+
 fn get_yaml(contents: String) -> Result<(), Box<dyn Error>> {
   let end_of_yaml = contents[4..].find("---").unwrap() + 4;
   let yaml = &contents[..end_of_yaml];
@@ -15,14 +24,6 @@ fn get_yaml(contents: String) -> Result<(), Box<dyn Error>> {
   } = serde_yaml::from_str(yaml)?;
   println!("{:?}", YamlHeader { author, published, title });
   Ok(())
-}
-
-#[derive(Debug, PartialEq, Deserialize)]
-struct YamlHeader {
-    title: String,
-    author: String,
-    #[serde(default)]
-    published: bool
 }
 
 fn open_post(file: File) -> Result<(), Box<dyn Error>> {
