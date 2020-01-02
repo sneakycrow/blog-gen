@@ -14,7 +14,13 @@ struct YamlHeader {
   published: bool,
 }
 
-fn get_yaml(contents: &String) -> Result<(), Box<dyn Error>> {
+#[derive(Debug)]
+struct Post {
+  yaml: YamlHeader,
+  content: String
+}
+
+fn get_yaml(contents: &String) -> Result<YamlHeader, Box<dyn Error>> {
   let end_of_yaml = contents[4..].find("---").unwrap() + 4;
   let yaml = &contents[..end_of_yaml];
   let YamlHeader {
@@ -22,18 +28,10 @@ fn get_yaml(contents: &String) -> Result<(), Box<dyn Error>> {
     title,
     published,
   } = serde_yaml::from_str(yaml)?;
-  println!(
-    "YAML: {:?}",
-    YamlHeader {
-      author,
-      published,
-      title
-    }
-  );
-  Ok(())
+  Ok(YamlHeader { author, title, published })
 }
 
-fn get_post_html(contents: &String) {
+fn get_post_html(contents: &String) -> String {
   let end_of_yaml = contents[4..].find("---").unwrap() + 4;
   let options = ComrakOptions {
     ext_header_ids: Some(String::new()),
@@ -42,20 +40,23 @@ fn get_post_html(contents: &String) {
   };
 
   let contents = comrak::markdown_to_html(&contents[end_of_yaml + 5..], &options);
-  println!("Contents: {:?}", contents);
+  contents
 }
 
-fn open_post(file: File) -> Result<(), Box<dyn Error>> {
+fn open_post(file: File) -> Result<Post, Box<dyn Error>> {
   let mut buf_reader = BufReader::new(file);
   let mut contents = String::new();
   match buf_reader.read_to_string(&mut contents) {
-    Err(e) => println!("Error: {:?}", e),
     _ => {
-      get_yaml(&contents).unwrap();
-      get_post_html(&contents);
+      let yaml_content = get_yaml(&contents).unwrap();
+      let post_content = get_post_html(&contents);
+      let post = Post {
+        yaml: yaml_content,
+        content: post_content
+      };
+      Ok(post)
     }
   }
-  Ok(())
 }
 
 fn traverse_posts_directory() -> Result<(), Box<dyn Error>> {
@@ -68,7 +69,8 @@ fn traverse_posts_directory() -> Result<(), Box<dyn Error>> {
     let file_name = entry.file_name().to_string_lossy();
     let file = File::open(file_path)?;
     if file_name.ends_with(".md") {
-      open_post(file).unwrap();
+      let post = open_post(file).unwrap();
+      println!("{:?}", post);
     }
   }
   Ok(())
