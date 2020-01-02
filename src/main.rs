@@ -1,5 +1,6 @@
 mod posts;
 
 fn main() {
-  posts::get_all_posts().unwrap();
+  let posts = posts::get_all_posts().unwrap();
+  println!("{:?}", posts);
 }

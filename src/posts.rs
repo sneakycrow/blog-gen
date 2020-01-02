@@ -15,7 +15,7 @@ struct YamlHeader {
 }
 
 #[derive(Debug)]
-struct Post {
+pub struct Post {
   yaml: YamlHeader,
   content: String
 }
@@ -59,7 +59,8 @@ fn open_post(file: File) -> Result<Post, Box<dyn Error>> {
   }
 }
 
-pub fn get_all_posts() -> Result<(), Box<dyn Error>> {
+pub fn get_all_posts() -> Result<Vec<Post>, Box<dyn Error>> {
+  let mut all_posts: Vec<Post> = Vec::new();
   for entry in WalkDir::new("./posts")
     .follow_links(true)
     .into_iter()
@@ -70,8 +71,8 @@ pub fn get_all_posts() -> Result<(), Box<dyn Error>> {
     let file = File::open(file_path)?;
     if file_name.ends_with(".md") {
       let post = open_post(file).unwrap();
-      println!("{:?}", post);
+      all_posts.push(post);
     }
   }
-  Ok(())
+  Ok(all_posts)
 }
